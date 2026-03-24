@@ -1,4 +1,5 @@
 # 1. **Challenge Decription**
+
 <img width="904" height="534" alt="image" src="https://github.com/user-attachments/assets/06665f8c-606e-47cf-aa90-48b8c92d1506" />
 
    The objective is to recover a hidden flag from a provided disk image 
@@ -82,7 +83,7 @@ for root, dirs, files in os.walk(path):
    The flag was found hidden within a compressed Git blob object in a 
    partially recovered filesystem
    
-![image](https://hackmd.io/_uploads/BknbArCtZx.png)
+<img width="710" height="387" alt="image" src="https://github.com/user-attachments/assets/309841c5-eb07-473f-9070-84b5f0ceed4c" />
 
    FLAG: picoCTF{g17_r35cu3_16ac6bf3}
 --------------------------------------------------------------------------------
