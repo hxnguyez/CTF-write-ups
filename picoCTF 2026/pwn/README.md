@@ -14,6 +14,8 @@ To solve these challenges, I utilize industry-standard pwnable tools:
 | :--- | :--- | :--- |
 | **offset-cycle** | ret2win | ✅ Solved |
 | **offset-cycleV2** | ⏳ In Progress | ⏳ In Progress |
+| **Echo Escape 1** | ⏳ In Progress | ⏳ In Progress |
+| **Echo Escape 2** | ⏳ In Progress | ⏳ In Progress |
 
 ---
 
