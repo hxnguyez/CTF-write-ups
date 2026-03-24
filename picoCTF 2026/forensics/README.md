@@ -26,6 +26,10 @@ To solve these challenges, I utilize industry-standard forensic tools:
 sudo apt install binwalk -y
 sudo apt install libimage-exiftool-perl -y
 ```
+* **Pigz:** Advance gunzip for better speed
+```bash
+sudo apt update && sudo apt install pigz -y
+```
 
 ## Featured Investigations
 
