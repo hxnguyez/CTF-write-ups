@@ -36,7 +36,7 @@ sudo apt update && sudo apt install pigz -y
 | Challenge Name | Key Technique | Status |
 | :--- | :--- | :--- |
 | **Forensics Git 0** | TSK / Inode Recovery | ✅ Solved |
-| *Forensics Git 1* | ⏳ In Progress | ⏳ In Progress |
+| **Forensics Git 1** | ⏳ In Progress | ✅ Solved |
 | **Forensics Git 2** | TSK / Inode Recovery | ✅ Solved |
 | *Timeline 0* | ⏳ In Progress | ⏳ In Progress |
 | *Tịmeline 1* | ⏳ In Progress | ⏳ In Progress |
