@@ -12,7 +12,7 @@ To solve these challenges, I utilize industry-standard pwnable tools:
 
 | Challenge Name | Key Technique | Status |
 | :--- | :--- | :--- |
-| **offset-cycle** | ⏳ In Progress | ⏳ In Progress |
+| **offset-cycle** | ret2win | ✅ Solved |
 | **offset-cycleV2** | ⏳ In Progress | ⏳ In Progress |
 
 ---
