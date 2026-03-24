@@ -33,7 +33,7 @@ flrsh@NguyenDucDuyHung-HE212194-CTVBCM:~/workspace1$ strings disk.img | grep -i 
 ```
 After read pass through directory, we need to check content of suspicious files
 <img width="1030" height="708" alt="image" src="https://github.com/user-attachments/assets/ea64246b-d76d-4ff5-b057-65ace09593de" />
-To read, we use icat for cat content from a specific node: ```icat -o filename node```
+To read, we use icat for cat content from a specific node: ```icat -o offset filename node```
 
 # 5. **Flag Recovering**
 <img width="1466" height="342" alt="image" src="https://github.com/user-attachments/assets/7d2ea3c3-f92c-469b-be2d-21bbcdeb3c21" />
