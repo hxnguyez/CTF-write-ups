@@ -16,6 +16,9 @@ To solve these challenges, I utilize industry-standard pwnable tools:
 | **offset-cycleV2** | ⏳ In Progress | ⏳ In Progress |
 | **Echo Escape 1** | ⏳ In Progress | ⏳ In Progress |
 | **Echo Escape 2** | ⏳ In Progress | ⏳ In Progress |
+| **Pizza Router** | ⏳ In Progress | ⏳ In Progress |
+| **Quizploit** | ⏳ In Progress | ⏳ In Progress |
+| **tea-cash** | ⏳ In Progress | ⏳ In Progress |
 
 ---
 
