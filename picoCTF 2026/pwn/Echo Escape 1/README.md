@@ -201,7 +201,6 @@ p.interactive()
 
 ### Kết quả
 ```bash
-flrsh@NguyenDucDuyHung-HE212194-CTVBCM:~/workspace5$ python3 k.py
 [+] Opening connection to mysterious-sea.picoctf.net on port 59995: Done
 [*] Switching to interactive mode
 Welcome to the secure echo service!
