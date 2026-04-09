@@ -2,18 +2,14 @@
 
 **Category:** Binary Exploitation  |
 **Point:** 400 |
-**Solve:** 895  
+Difficult: Hard
 
-**Decription:** 
 > It's a race against time. Solve the binary exploit ASAP.
-Additional details will be available after launching your challenge instance.
-
-## Connection
 ```bash
 ssh -p <PORT> ctf-player@green-hill.picoctf.net
 # Password: password
 ```
-You need to access picoCTF 2026 to get port and password for this challenge!
+Bạn cần truy cập thử thách trên pico để mở instance
 
 ## Write-up
 ### 1. Challenge Overview
