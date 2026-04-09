@@ -1,4 +1,4 @@
-# PicoCTF 2026: Offset-Cycle
+# PicoCTF 2026: Echo Escape 2
 
 **Category:** Binary Exploitation  |
 **Point:** 300 |
