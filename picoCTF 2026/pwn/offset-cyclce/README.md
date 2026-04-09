@@ -205,22 +205,22 @@ Dump of assembler code for function vuln:
    0x080492c9 <+72>:    ret
 End of assembler dump.
 ```
-Vì bài này đặt buffersize biến buf, ta có thể tính toán chính xác size thật sự bằng cách lấy địa chỉ saved eip - buf address. Nhưng trước hết để tìm ra địa chỉ buf ta có thể thông qua hàm gets trong code trên. Đây là những thứ ta cần chú ý
+Vì bài này đặt buffersize biến buf, ta có thể tính toán chính xác size thật sự bằng cách lấy địa chỉ ```saved eip - buf address```. Nhưng trước hết để tìm ra địa chỉ buf ta có thể thông qua hàm gets trong code trên. Đây là những thứ ta cần chú ý
 ```bash
    0x0804929d <+28>:    lea    -0x96(%ebp),%eax
    0x080492a3 <+34>:    push   %eax
    0x080492a4 <+35>:    call   0x8049050 <gets@plt>
 ```
-Ta sẽ đặt breakpoint tại lệnh lea, như tôi nói lúc trước gets() sẽ đưa chuỗi được nhập vào nơi chứa cái được yêu cầu(ở đây là gets(buf)) nên tất cả các chuỗi mình nhập sẽ được đưa vào điểm bắt đầu của buffer, cũng là cái ebp-0x3a ở trên
+Ta sẽ đặt breakpoint tại lệnh lea sử dụng ```b *0x0804929d```, như tôi nói lúc trước ```gets()``` sẽ đưa chuỗi được nhập vào nơi chứa cái được yêu cầu(ở đây là ```gets(buf)```) nên tất cả các chuỗi mình nhập sẽ được đưa vào điểm bắt đầu của buffer, cũng là cái ```ebp-0x3a``` ở trên
 
-Để dễ dàng quan sát ta dùng lệnh r sau khi đặt breakpoint, dùng lệnh ni (next instruction) để cái địa chỉ của ebp-0x3a được đưa vào thanh ghi eax. Lúc này, dùng lệnh info registers $eax (i r $eax) để xem giá trị eax store là bao nhiêu
+Để dễ dàng quan sát ta dùng lệnh r sau khi đặt breakpoint, dùng lệnh ```ni``` (next instruction) để cái địa chỉ của ```ebp-0x3a``` được đưa vào thanh ghi eax. Lúc này, dùng lệnh ```info registers $eax``` (i r $eax) để xem giá trị eax store là bao nhiêu
 ```bash
 (gdb) ni
 0x080492a3 in vuln ()
 (gdb) i r eax
 eax            0xffdc51d2          -2338350
 ```
-Và con số 0xffdc51d2 chính là địa chỉ của đầu buffer. Tiếp tục dùng info frame (i frame) để giá trị và địa chỉ các thanh ghi trong stack
+Và con số **0xffdc51d2** chính là địa chỉ của đầu buffer. Tiếp tục dùng ```info frame``` (i frame) để giá trị và địa chỉ các thanh ghi trong stack
 ```bash
 (gdb) i frame
 Stack level 0, frame at 0xffdc5270:
@@ -231,14 +231,15 @@ Stack level 0, frame at 0xffdc5270:
  Saved registers:
   ebx at 0xffdc5264, ebp at 0xffdc5268, eip at 0xffdc526c
 ```
-Mấy dòng ở trên là giá trị các thanh ghi chứa, ta chỉ quan tâm cái ```eip at 0xffdc526c``` vì đây là đỉnh stack, chứa return address. Sử dụng lệnh p 0xffdc526c-0xffdc51d2 sẽ ra chính xác offset cần tìm:
+Mấy dòng ở trên là giá trị các thanh ghi chứa, ta chỉ quan tâm cái ```eip at 0xffdc526c``` vì đây là đỉnh stack, chứa return address. Sử dụng lệnh ```p 0xffdc526c-0xffdc51d2``` sẽ ra chính xác offset cần tìm:
 ```bash
 (gdb) p 0xffdc526c-0xffdc51d2
 $1 = 154
 ```
 ## 3. Chiến thuật khai thác
-Con số 154 chính xác là cái rbp-0x96 mà lệnh lea ở chỉ vào + 4 byte của saved ebp (4 bytes vì đây là kiến trúc 32bit i386, còn đối với kiến trúc 64 bit thì save rbp luôn là 8 bytes) = 154 byte
-Như vậy ta thấy địa chỉ buffer cố định trên lea ebp-(offset-4). Nhưng vì bài này giới hạn thời gian nên chúng ta sẽ sử dụng payload script để tìm ra flag, và tôi cũng sẽ thử lại một phiên mới để nhanh tìm ra offset
+Con số 154 chính xác là cái **rbp-0x96** mà lệnh lea ở chỉ vào + **4 byte** của saved ebp (4 bytes vì đây là kiến trúc **32bit i386**, còn đối với kiến trúc **64 bit** thì save rbp luôn là **8 bytes**) = 154 byte
+
+Như vậy ta thấy địa chỉ buffer cố định trên ```lea ebp-(offset-4)```. Nhưng vì bài này giới hạn thời gian nên chúng ta sẽ sử dụng payload script để tìm ra flag, và tôi cũng sẽ thử lại một phiên mới để nhanh tìm ra offset
 ### Payload
 Sử dụng python để viết script là lựa chọn tốt nhất, ta hàm thư viện pwn kết hợp các hàm process, sendline và interactive để khai thác
 ```python
