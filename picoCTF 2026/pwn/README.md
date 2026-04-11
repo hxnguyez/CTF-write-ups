@@ -12,11 +12,11 @@ To solve these challenges, I utilize industry-standard pwnable tools:
 
 | Challenge Name | Key Technique | Status |
 | :--- | :--- | :--- |
-| **Quizploit** | Knowledge (easy) | ✅ Solved |
+| **Quizploit** | quizz(easy) | ✅ Solved |
 | **offset-cycle** | ret2win | ✅ Solved |
-| **offset-cycleV2** | ⏳ In Progress | ✅ Solved |
-| **Echo Escape 1** | ⏳ In Progress | ✅ Solved |
-| **Echo Escape 2** | ⏳ In Progress | ✅ Solved |
+| **offset-cycleV2** | ret2win | ✅ Solved |
+| **Echo Escape 1** | ret2win | ✅ Solved |
+| **Echo Escape 2** | ret2win | ✅ Solved |
 
 
 
