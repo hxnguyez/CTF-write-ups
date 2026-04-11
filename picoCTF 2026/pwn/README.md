@@ -14,11 +14,11 @@ To solve these challenges, I utilize industry-standard pwnable tools:
 | :--- | :--- | :--- |
 | **Quizploit** | Knowledge (easy) | ✅ Solved |
 | **offset-cycle** | ret2win | ✅ Solved |
-| **offset-cycleV2** | ⏳ In Progress | ⏳ In Progress |
-| **Echo Escape 1** | ⏳ In Progress | ⏳ In Progress |
-| **Echo Escape 2** | ⏳ In Progress | ⏳ In Progress |
-| **Pizza Router** | ⏳ In Progress | ⏳ In Progress |
-| **tea-cash** | ⏳ In Progress | ⏳ In Progress |
+| **offset-cycleV2** | ⏳ In Progress | ✅ Solved |
+| **Echo Escape 1** | ⏳ In Progress | ✅ Solved |
+| **Echo Escape 2** | ⏳ In Progress | ✅ Solved |
+
+
 
 ---
 
