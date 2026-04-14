@@ -399,8 +399,7 @@ Khi đã có offset (tới saved ebp) được xác định tại lệnh call re
 ## 4. Chiến thuật khai thác
 Vì bài này thời gian rất có hạn (80s) nên tôi sẽ cần một thao tác nhanh chính xác kết hợp một payload script để có được flag
 
-* Bước 1: Viết sẵn script, tôi sử dụng python cho tính tiện dụng và hàm pwntools hiệu quả của nó
-Script này chỉ cần sửa filename và offset dạng hex tìm được từ lệnh lea, nó sẽ tự chuyển thành decimal và tự trừ ra offset chuẩn để gửi payload. Tôi cũng kết hợp 12 bytes đến saved ebp và 4 bytes rác của saved ebp lại thành 16 bytes để nhìn gọn nhất. Sau đó dùng các lệnh sendafter để gửi payload
+* Bước 1: Viết sẵn script, tôi sử dụng python cho tính tiện dụng và hàm pwntools hiệu quả của nó. Script này cho phép tôi chỉ cần sửa filename và offset dạng hex tìm được từ lệnh lea, nó sẽ tự chuyển thành decimal và tự trừ ra offset chuẩn để gửi payload. Tôi cũng kết hợp 12 bytes đến saved ebp và 4 bytes rác của saved ebp lại thành 16 bytes để nhìn gọn nhất. Sau đó dùng các lệnh sendafter để gửi payload
 ```python
 from pwn import *
 
