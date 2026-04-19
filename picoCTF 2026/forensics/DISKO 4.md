@@ -31,7 +31,10 @@ flrsh@hxngnyez:~/workspace5$ strings -t d disko-4.dd | grep -i "pico"
 Kết quả cho thấy nhiều tham chiếu đến picoctf-2025 và các tệp cấu hình liên quan đến trình soạn thảo văn bản pico. Điều này xác nhận đây là phân vùng mục tiêu chính xác
 
 # 3. Filesystem Investigation
-Sử dụng công cụ fls từ bộ The Sleuth Kit để liệt kê các danh mục và tệp tin trong image. Chúng ta đặc biệt chú ý đến các tệp tin đã bị xóa (thường được đánh dấu bằng dấu * trong kết quả của fls)
+Sử dụng công cụ fls từ bộ The Sleuth Kit để liệt kê các danh mục và tệp tin trong image. Chúng ta đặc biệt chú ý đến các tệp tin đã bị xóa (đề bài có đề cập đến) 
+
+tham số -r: đệ quy (lấy các thứ chi tiết)
+tham số -d: deleted (lấy các thứ bị xóa)
 
 ```bash
 flrsh@hxngnyez:~/workspace5$ fls -r -d disko-4.dd
