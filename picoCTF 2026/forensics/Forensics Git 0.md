@@ -17,9 +17,13 @@ From this we can see that, part 1 and 3 we need to check from 2048 and 1140736
 
 # 3. **Filesystem Investigation**
 We know the exactly offset of part 1 and part 3, to list all file from these two parts, a tool ```fls``` (File list) will be used with ```-r``` (recursive, including deep files) and ```-o``` (offset) 
-<img width="1062" height="404" alt="image" src="https://github.com/user-attachments/assets/30cc1366-25f5-45dc-aa10-fa0e2c794f9a" />
+
+<img width="645" height="332" alt="image" src="https://github.com/user-attachments/assets/29237ac2-34dc-428a-8c0f-47b27e99f3a8" />
+
 I do not see any suspicious artifacts in part 1, then we can check partition 3
-<img width="1493" height="693" alt="image" src="https://github.com/user-attachments/assets/4b529ffb-5eac-4e2e-8ec9-5a52553a9d1c" />
+
+<img width="532" height="441" alt="image" src="https://github.com/user-attachments/assets/ab238362-8bea-442c-86e6-1f550073943c" />
+
 ```r/r```: Normal file like image, text,..
 ```d/d```: Directory
 ```l/l```: Symbolic list( a link to another file)
@@ -28,11 +32,13 @@ I do not see any suspicious artifacts in part 1, then we can check partition 3
 # 4. **Finding**
 ```
 Performing keyword search using strings and grep: strings  disk.img | grep -i "picoCTF{"
-flrsh@NguyenDucDuyHung-HE212194-CTVBCM:~/workspace1$ strings disk.img | grep -i "picoCTF{}"
+flrsh@chillfish:~/workspace1$ strings disk.img | grep -i "picoCTF{}"
 5425754000 The picoCTF flag format is 'picoCTF{}' where there is some leetspeak phrase in between the curly braces
 ```
 After read pass through directory, we need to check content of suspicious files
-<img width="1030" height="708" alt="image" src="https://github.com/user-attachments/assets/ea64246b-d76d-4ff5-b057-65ace09593de" />
+
+<img width="762" height="532" alt="image" src="https://github.com/user-attachments/assets/c54509fd-5f3c-4470-962a-461ab3b3bfe5" />
+
 To read, we use icat for cat content from a specific node: ```icat -o offset filename node```
 
 # 5. **Flag Recovering**
